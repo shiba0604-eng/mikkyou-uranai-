@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  birthYear   Int
+  birthMonth  Int
+  birthDay    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  logs        FortuneLog[]
+}
+
+/// 毎朝の配信ログ
+model FortuneLog {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           String   // "2026-03-23"
+  birthShuku     String   // 本命宿名
+  todayShuku     String   // 当日宿名
+  avoidanceLevel String   // 大吉/吉/中吉/平/注意/凶/大凶
+  dangerScore    Int      // 0〜100
+  isRikkai       Boolean  // 六害宿か
+  sentAt         DateTime @default(now())
+}

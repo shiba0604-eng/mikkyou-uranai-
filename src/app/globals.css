@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
+
+body {
+  background-color: #0d0620;
+  color: #e8d5a3;
+  font-family: 'Noto Serif JP', serif;
+}

@@ -23,7 +23,7 @@
 
 export type ShukuElement = "金" | "日" | "火" | "水" | "木" | "土" | "月";
 export type ShukuNature = "安" | "危" | "中";
-export type AvoidanceLevel = "大凶" | "凶" | "注意" | "平" | "吉" | "大吉";
+export type AvoidanceLevel = "大凶" | "凶" | "注意" | "平" | "中吉" | "吉" | "大吉";
 
 /** 宿の基本データ */
 export interface Shuku {
