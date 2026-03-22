@@ -4,34 +4,44 @@ import { useState } from "react";
 import { assessDanger, type DangerAssessment } from "../../lib/shukuyo";
 import DangerDashboard from "@/components/DangerDashboard";
 
-type SubscribeState = "idle" | "loading" | "done" | "error";
-
 export default function Home() {
   const [birthYear, setBirthYear] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
-  const [result, setResult] = useState<DangerAssessment | null>(null);
   const [email, setEmail] = useState("");
-  const [subState, setSubState] = useState<SubscribeState>("idle");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<DangerAssessment | null>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const handleSubscribe = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubState("loading");
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, birthYear, birthMonth, birthDay }),
-      });
-      setSubState(res.ok ? "done" : "error");
-    } catch {
-      setSubState("error");
+    setLoading(true);
+
+    const assessment = assessDanger(
+      parseInt(birthYear), parseInt(birthMonth), parseInt(birthDay)
+    );
+    setResult(assessment);
+
+    // メールアドレスが入力されていれば登録 & 即送信
+    if (email) {
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, birthYear, birthMonth, birthDay }),
+        });
+        if (res.ok) setRegistered(true);
+      } catch {
+        // 登録失敗してもUI表示は続ける
+      }
     }
+
+    setLoading(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setResult(assessDanger(parseInt(birthYear), parseInt(birthMonth), parseInt(birthDay)));
+  const handleReset = () => {
+    setResult(null);
+    setRegistered(false);
   };
 
   return (
@@ -39,7 +49,6 @@ export default function Home() {
 
       {/* ── ヘッダー ── */}
       <header className="text-center mb-12 w-full max-w-xl">
-        {/* 装飾ライン上 */}
         <div className="flex items-center gap-3 justify-center mb-6">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#D4AF37]/50" />
           <span className="text-[#D4AF37] text-lg animate-pulse-gold">✦</span>
@@ -48,7 +57,6 @@ export default function Home() {
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#D4AF37]/50" />
         </div>
 
-        {/* メインタイトル */}
         <h1 className="text-4xl md:text-5xl font-bold mb-3 text-glow-gold"
             style={{ color: '#D4AF37', letterSpacing: '0.1em' }}>
           避凶の宿曜道
@@ -58,7 +66,6 @@ export default function Home() {
           1300年前に封印された術 ─ 二十七宿で今日の禍を避ける
         </p>
 
-        {/* 装飾ライン下 */}
         <div className="flex items-center gap-3 justify-center mt-6">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#D4AF37]/30" />
           <span className="text-[#D4AF37]/40 text-xs">◈</span>
@@ -69,17 +76,13 @@ export default function Home() {
       {/* ── 入力フォーム ── */}
       {!result && (
         <div className="w-full max-w-sm animate-float">
-          {/* 月と太陽の装飾 */}
           <div className="flex justify-between px-4 mb-4 text-2xl">
             <span className="text-[#D4AF37]/60" style={{ textShadow: '0 0 15px rgba(212,175,55,0.6)' }}>☽</span>
             <span className="text-[#D4AF37]/40 text-base self-center">✦  ✦  ✦</span>
             <span className="text-[#D4AF37]/60" style={{ textShadow: '0 0 15px rgba(212,175,55,0.6)' }}>☀</span>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="glass-card glow-gold p-8 flex flex-col gap-5"
-          >
+          <form onSubmit={handleSubmit} className="glass-card glow-gold p-8 flex flex-col gap-5">
             <div className="text-center">
               <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase mb-1">Your Birth Date</p>
               <p className="text-[#F0E6D0] text-sm tracking-widest">生年月日を入力してください</p>
@@ -128,20 +131,35 @@ export default function Home() {
 
             <hr className="divider-gold" />
 
+            {/* メールアドレス（任意） */}
+            <div>
+              <label className="text-[#7A6A50] text-xs tracking-widest block mb-1.5">
+                メールアドレス
+                <span className="ml-2 text-[#3A2A1A]">（毎朝6:30に配信・任意）</span>
+              </label>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black/40 border border-[#D4AF37]/20 rounded-lg px-4 py-2.5 text-[#F0E6D0] text-sm placeholder-[#3A2A1A] focus:outline-none focus:border-[#D4AF37]/60 transition-all"
+              />
+            </div>
+
             <button
               type="submit"
-              className="relative overflow-hidden py-3.5 rounded-lg font-bold tracking-[0.2em] text-sm transition-all"
+              disabled={loading}
+              className="relative overflow-hidden py-3.5 rounded-lg font-bold tracking-[0.2em] text-sm transition-all disabled:opacity-60"
               style={{
                 background: 'linear-gradient(135deg, #8B6914 0%, #D4AF37 50%, #8B6914 100%)',
                 color: '#03000A',
                 boxShadow: '0 0 20px rgba(212,175,55,0.4)',
               }}
             >
-              ✦ 今日の宿命を開く ✦
+              {loading ? "鑑定中..." : "✦ 今日の宿命を開く ✦"}
             </button>
           </form>
 
-          {/* 下部注釈 */}
           <p className="text-center text-[#3A2A1A] text-xs mt-4 tracking-wider">
             守護霊からのサインを受け取る
           </p>
@@ -153,56 +171,16 @@ export default function Home() {
         <div className="w-full max-w-xl">
           <DangerDashboard assessment={result} />
 
-          {/* ── メール登録 ── */}
-          <div className="mt-6 glass-card glow-gold p-6">
-            {subState === "done" ? (
-              <div className="text-center">
-                <p className="text-[#D4AF37] text-base font-bold mb-1">✦ 登録完了 ✦</p>
-                <p className="text-[#9b8a6a] text-xs leading-relaxed">
-                  毎朝 6:30 に今日の宿命をお届けします。<br />
-                  今日の鑑定をメールで送りました。
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="flex flex-col gap-4">
-                <div className="text-center">
-                  <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase mb-1">Daily Delivery</p>
-                  <p className="text-[#e8d5a3] text-sm">毎朝 6:30 に鑑定結果をメール配信</p>
-                  <p className="text-[#7A6A50] text-xs mt-1">登録すると今日の結果も即送信されます</p>
-                </div>
-                <hr className="divider-gold" />
-                <div>
-                  <label className="text-[#7A6A50] text-xs tracking-widest block mb-1.5">メールアドレス</label>
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full bg-black/40 border border-[#D4AF37]/20 rounded-lg px-4 py-2.5 text-[#F0E6D0] text-sm placeholder-[#3A2A1A] focus:outline-none focus:border-[#D4AF37]/60 transition-all"
-                  />
-                </div>
-                {subState === "error" && (
-                  <p className="text-red-400 text-xs text-center">送信に失敗しました。再度お試しください。</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={subState === "loading"}
-                  className="py-3 rounded-lg font-bold tracking-[0.15em] text-sm transition-all disabled:opacity-50"
-                  style={{
-                    background: "linear-gradient(135deg, #4a1d96 0%, #7c3aed 50%, #4a1d96 100%)",
-                    color: "#e9d5ff",
-                    boxShadow: "0 0 20px rgba(124,58,237,0.4)",
-                  }}
-                >
-                  {subState === "loading" ? "送信中..." : "✦ 毎朝届けてもらう ✦"}
-                </button>
-              </form>
-            )}
-          </div>
+          {/* メール登録完了バナー */}
+          {registered && (
+            <div className="mt-4 glass-card p-4 text-center border border-[#7c3aed]/40">
+              <p className="text-[#a78bfa] text-sm font-bold">✦ 毎朝6:30に届きます ✦</p>
+              <p className="text-[#7A6A50] text-xs mt-1">今日の鑑定をメールで送りました</p>
+            </div>
+          )}
 
           <button
-            onClick={() => { setResult(null); setSubState("idle"); setEmail(""); }}
+            onClick={handleReset}
             className="mt-6 w-full text-[#7A6A50] text-xs tracking-widest hover:text-[#D4AF37] transition-colors"
           >
             ─ 別の生年月日で占い直す ─
