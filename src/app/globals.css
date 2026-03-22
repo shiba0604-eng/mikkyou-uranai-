@@ -1,8 +1,152 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Cinzel:wght@400;700&display=swap');
 @import "tailwindcss";
 
-body {
-  background-color: #0d0620;
-  color: #e8d5a3;
-  font-family: 'Noto Serif JP', serif;
+/* ── ベース ── */
+:root {
+  --gold: #D4AF37;
+  --gold-light: #F0D060;
+  --gold-dim: #8B6914;
+  --purple: #7C3AED;
+  --pink: #DB2777;
+  --blue-glow: #3B82F6;
+  --bg: #03000A;
+  --surface: rgba(10, 3, 22, 0.75);
+  --text: #F0E6D0;
+  --text-dim: #7A6A50;
 }
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif JP', 'Cinzel', serif;
+  overflow-x: hidden;
+}
+
+/* ── 星フィールド ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 35%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 15% 75%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 40% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 60%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 15%, rgba(212,175,55,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 40%, rgba(180,160,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 88%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(2px 2px at 20% 5%, rgba(212,175,55,0.5) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 紫グロー背景 ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(124,58,237,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 35% at 80% 20%, rgba(59,130,246,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(219,39,119,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── グラスカード ── */
+.glass-card {
+  background: rgba(10, 3, 28, 0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212,175,55,0.20);
+  border-radius: 1rem;
+}
+
+.glass-card-purple {
+  background: rgba(15, 5, 35, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(124,58,237,0.30);
+  border-radius: 1rem;
+}
+
+.glass-card-danger {
+  background: rgba(30, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(220,38,38,0.50);
+  border-radius: 1rem;
+}
+
+/* ── グローテキスト ── */
+.text-glow-gold {
+  text-shadow: 0 0 20px rgba(212,175,55,0.8), 0 0 40px rgba(212,175,55,0.4);
+}
+
+.text-glow-purple {
+  text-shadow: 0 0 20px rgba(167,139,250,0.9), 0 0 40px rgba(124,58,237,0.5);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 20px rgba(248,113,113,0.9), 0 0 40px rgba(220,38,38,0.5);
+}
+
+/* ── ボックスグロー ── */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.05);
+}
+
+.glow-purple {
+  box-shadow: 0 0 30px rgba(124,58,237,0.20), inset 0 0 20px rgba(124,58,237,0.05);
+}
+
+.glow-danger {
+  box-shadow: 0 0 30px rgba(220,38,38,0.25), inset 0 0 20px rgba(220,38,38,0.05);
+}
+
+/* ── 区切り線 ── */
+.divider-gold {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent);
+}
+
+/* ── 入力フォーム ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── スクロールバー ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #03000A; }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 2px; }
+
+/* ── アニメーション ── */
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse-gold { animation: pulse-gold 3s ease-in-out infinite; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 30s linear infinite; }
+
+/* ── z-index コンテンツ ── */
+main { position: relative; z-index: 1; }
