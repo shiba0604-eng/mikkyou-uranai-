@@ -3,8 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 model User {
@@ -24,10 +23,12 @@ model FortuneLog {
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date           String   // "2026-03-23"
-  birthShuku     String   // 本命宿名
-  todayShuku     String   // 当日宿名
-  avoidanceLevel String   // 大吉/吉/中吉/平/注意/凶/大凶
-  dangerScore    Int      // 0〜100
-  isRikkai       Boolean  // 六害宿か
+  birthShuku     String
+  todayShuku     String
+  avoidanceLevel String
+  dangerScore    Int
+  isRikkai       Boolean
   sentAt         DateTime @default(now())
+
+  @@unique([userId, date])
 }
