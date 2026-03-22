@@ -1,3 +1,39 @@
+# HighStakes-Slides v2 — 次世代スライド自動調理
+
+## 最優先開発指針（プロジェクトの「脳」）
+
+### 哲学：Director-ship
+- **ユーザーにペンを持たせない。** エージェントチームが最高の一手を提案し、ユーザーは**選ぶ（承認・ディレクション）**ことだけに集中する。
+- 作業時間を削り、判断品質を最大化する。
+
+### 品質基準
+- **外資コンサル基準のロジック**（So What / PREP / 1スライド1メッセージの徹底）。
+- **雑誌レベルのタイポグラフィ**（階層・余白・ジャンプ率の意図的設計）。
+- メッセージは常に**単一の核**へ収束させる。
+
+### 構造：自律型エージェント合議
+- **戦略軍師 (Strategist)**：8勝利パターンから論理構造を選び、全スライド構成を作る。
+- **コピーライター (Copywriter)**：PREP・体言止め・要約でキーメッセージを研ぐ。
+- **図解デザイナー (Visualizer)**：並列・推移・対比・包含の4レイアウトへCSSクラス割当。
+- **校閲 (Reviewer)**：チェックリスト採点。**70点以下は自動リテイク。**
+
+### 主要パス（実装）
+| 領域 | パス |
+|------|------|
+| エージェント | `lib/agents/*` |
+| Design DNA | `styles/dna.ts` |
+| ディレクターUI | `src/app/studio`, `src/components/highstakes/DirectorStudio.tsx` |
+| Marp プレビュー API | `src/app/api/highstakes/preview` |
+| 生成 API | `src/app/api/highstakes/generate` |
+| クレジット API | `src/app/api/highstakes/credits` |
+| Stripe | `src/app/api/stripe/checkout`, `webhook` |
+| LP | `src/app/lp/page.tsx` |
+
+### Stripe / 環境変数
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_SLIDE_CREDITS`, `STRIPE_CREDITS_PER_PURCHASE`（任意）, `NEXT_PUBLIC_APP_URL`
+
+---
+
 # 密教占い配信ツール ― 避凶（ひきょう）特化型
 
 ## コンセプト：「運気を下げる行動を徹底的に避ける」
@@ -26,30 +62,24 @@
 | 認証 | NextAuth.js |
 | デプロイ | Vercel |
 | AI文言生成 | Anthropic Claude API（オプション）|
+| スライド | Marp (Marpit), PptxGenJS, Stripe |
 
 ---
 
-## ディレクトリ構成
+## ディレクトリ構成（抜粋）
 
 ```
 mikkyou-uranai/
 ├── lib/
-│   └── shukuyo.ts          # 宿曜占星術計算エンジン（避凶特化）★核心
+│   ├── shukuyo.ts, agents/, db.ts …
+├── styles/
+│   └── dna.ts                 # HighStakes Design DNA
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx         # トップ：今日の危険度ダッシュボード
-│   │   ├── register/        # ユーザー登録（生年月日入力）
-│   │   ├── calendar/        # 30日間の危険カレンダー
-│   │   └── api/
-│   │       ├── fortune/     # 運勢API
-│   │       └── cron/        # 毎朝配信cronジョブ
-│   ├── lib/
-│   │   ├── db/              # Prisma client
-│   │   └── email/           # Resend メール配信
-│   └── components/
-│       ├── DangerAlert.tsx  # 大凶アラート表示
-│       ├── ShukuCard.tsx    # 宿の情報カード
-│       └── AvoidList.tsx    # 今日の回避行動リスト
+│   │   ├── studio/            # Director UI
+│   │   ├── lp/                # ランディング
+│   │   └── api/highstakes/    # 生成・プレビュー・クレジット
+│   └── components/highstakes/
 ├── prisma/
 │   └── schema.prisma
 └── CLAUDE.md
@@ -74,7 +104,7 @@ mikkyou-uranai/
 
 ---
 
-## 開発ルール
+## 開発ルール（密教占い）
 
 ### 1. 凶判定は厳しく、吉判定は慎重に
 - 六害宿・危の宿・凶相性が重なった日は `大凶` を迷わず表示する
@@ -113,7 +143,7 @@ npm run db:seed      # シードデータ投入
 
 ---
 
-## 今後の実装ロードマップ
+## 今後の実装ロードマップ（密教占い）
 
 - [ ] Next.jsプロジェクト初期化
 - [ ] Prismaスキーマ（User, FortuneLog）

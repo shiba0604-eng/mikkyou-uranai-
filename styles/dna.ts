@@ -1,5 +1,7 @@
 import type { DesignDnaId } from "@lib/agents/types";
 
+export type { DesignDnaId } from "@lib/agents/types";
+
 export interface DesignDNA {
   id: DesignDnaId;
   name: string;
@@ -58,14 +60,16 @@ export const DESIGN_DNAS: Record<DesignDnaId, DesignDNA> = {
         color: #F4F1EA;
         font-family: ${serifStack};
       }
-      .hs-msgline {
+      section h2:first-of-type {
         position: absolute; top: 48px; left: 64px; right: 64px;
         border-bottom: 1px solid rgba(201,162,39,0.45);
         padding-bottom: 12px;
-        font-size: 0.85rem;
-        letter-spacing: 0.12em;
+        font-size: 0.75rem;
+        font-weight: 400;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         color: #C9A227;
+        margin: 0;
       }
       .hs-layout { padding-top: 96px; }
       .hs-parallel { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }

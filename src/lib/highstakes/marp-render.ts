@@ -1,13 +1,13 @@
 import { layoutClass } from "@lib/agents/visualizer";
-import type { SlideDeckSlide } from "@lib/agents/types";
-import { getDna, type DesignDnaId } from "@styles/dna";
+import type { DesignDnaId, SlideDeckSlide } from "@lib/agents/types";
+import { getDna } from "@styles/dna";
 
 export function buildMarpMarkdown(
   slides: SlideDeckSlide[],
   dnaId: DesignDnaId,
 ): string {
   const dna = getDna(dnaId);
-  const header = "---\nmarp: true\ntheme: default\npaginate: true\n---\n";
+  const header = "---\nmarp: true\ntheme: default\npaginate: true\nstyle: |\n  section { box-sizing: border-box; }\n---\n";
 
   const parts = slides.map((sl) => {
     const lc = layoutClass(sl.layout);
@@ -18,16 +18,14 @@ export function buildMarpMarkdown(
       .map((e) => `- ${e.content}`)
       .join("\n");
 
-    const msgline =
+    const eyebrow =
       dna.layoutProfile.messageLine === "top-fixed"
-        ? '<div class="hs-msgline">STRATEGIC DECK // HIGH STAKES</div>\n\n'
+        ? "## STRATEGIC DECK // HIGH STAKES\n\n"
         : "";
 
-    const icons = dna.layoutProfile.iconForward
-      ? '<div class="hs-iconrow"><span class="hs-icon"></span><span class="hs-icon"></span><span class="hs-icon"></span></div>\n\n'
-      : "";
+    const icons = dna.layoutProfile.iconForward ? "- ● ● ●\n\n" : "";
 
-    return `---\n\n${msgline}${icons}# ${title}\n\n<div class="${lc}">\n\n${bullets}\n\n</div>\n`;
+    return `---\n_class: ${lc}\n---\n\n${eyebrow}${icons}# ${title}\n\n${bullets}\n`;
   });
 
   return header + parts.join("\n");
@@ -38,7 +36,7 @@ export async function renderMarpToHtml(markdown: string): Promise<{
   css: string;
 }> {
   const { Marpit } = await import("@marp-team/marpit");
-  const marpit = new Marpit({ inlineSVG: true, html: true });
+  const marpit = new Marpit({ inlineSVG: true });
   const { html, css } = marpit.render(markdown);
   return { html, css };
 }
