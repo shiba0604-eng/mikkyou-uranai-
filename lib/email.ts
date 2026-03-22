@@ -145,3 +145,98 @@ export async function sendDailyFortune(
     html,
   });
 }
+
+export async function sendWelcomeEmail(
+  email: string,
+  userId: string,
+  assessment: DangerAssessment
+) {
+  const { birthShuku } = assessment;
+  const unsubscribeUrl = `${BASE_URL}/unsubscribe?uid=${userId}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#03000A;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#03000A;padding:24px 0">
+<tr><td align="center">
+<table width="100%" style="max-width:520px;background:#0a0318;border:1px solid rgba(212,175,55,0.25);border-radius:16px;overflow:hidden">
+
+  <!-- ヘッダー -->
+  <tr><td style="background:linear-gradient(135deg,#0d0420,#1a0a2e);padding:32px 24px;text-align:center;border-bottom:1px solid rgba(212,175,55,0.15)">
+    <p style="margin:0 0 8px;color:rgba(212,175,55,0.6);font-size:11px;letter-spacing:0.3em;text-transform:uppercase">Mikkyō Astrology</p>
+    <h1 style="margin:0 0 6px;color:#D4AF37;font-size:26px;letter-spacing:0.1em">✦ ようこそ ✦</h1>
+    <h2 style="margin:0;color:#e8d5a3;font-size:16px;font-weight:normal">避凶の宿曜道へ</h2>
+  </td></tr>
+
+  <!-- 本文 -->
+  <tr><td style="padding:28px 24px">
+    <p style="margin:0 0 16px;color:#e8d5a3;font-size:14px;line-height:1.8">
+      登録ありがとうございます。<br>
+      あなたの本命宿は <strong style="color:#D4AF37;font-size:16px">${birthShuku.name}</strong>（${birthShuku.reading}）です。
+    </p>
+
+    <div style="background:#0d0620;border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:16px;margin-bottom:20px">
+      <p style="margin:0 0 10px;color:#D4AF37;font-size:13px;font-weight:bold">毎朝6:30に届くもの</p>
+      <p style="margin:4px 0;color:#9b8a6a;font-size:12px">✦ 今日の宿と危険スコア（0〜100）</p>
+      <p style="margin:4px 0;color:#9b8a6a;font-size:12px">✦ 六害宿アラート（大凶日の事前通知）</p>
+      <p style="margin:4px 0;color:#9b8a6a;font-size:12px">✦ 今日避けるべき具体的な行動</p>
+      <p style="margin:4px 0;color:#9b8a6a;font-size:12px">✦ 今日の護身真言</p>
+    </div>
+
+    <div style="background:#0d0620;border:1px solid rgba(212,175,55,0.15);border-radius:10px;padding:16px;margin-bottom:20px">
+      <p style="margin:0 0 10px;color:#D4AF37;font-size:13px;font-weight:bold">宿曜道の使い方</p>
+      <p style="margin:0 0 8px;color:#9b8a6a;font-size:12px;line-height:1.7">
+        <strong style="color:#e8d5a3">①</strong> 毎朝メールを確認して危険スコアをチェック
+      </p>
+      <p style="margin:0 0 8px;color:#9b8a6a;font-size:12px;line-height:1.7">
+        <strong style="color:#e8d5a3">②</strong> 「凶・大凶」の日は重要な決断・契約・投資を避ける
+      </p>
+      <p style="margin:0 0 8px;color:#9b8a6a;font-size:12px;line-height:1.7">
+        <strong style="color:#e8d5a3">③</strong> 「吉・大吉」の日に大切なことを実行する
+      </p>
+      <p style="margin:0;color:#9b8a6a;font-size:12px;line-height:1.7">
+        <strong style="color:#e8d5a3">④</strong> 朝10回「辛くてありがとう」と唱える
+      </p>
+    </div>
+
+    <div style="background:#100005;border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;margin-bottom:20px">
+      <p style="margin:0 0 6px;color:#f87171;font-size:12px;font-weight:bold">⚠ 六害宿（ろくがいしゅく）について</p>
+      <p style="margin:0;color:#9b8a6a;font-size:12px;line-height:1.7">
+        あなたの本命宿から特定の距離にある宿の日は「六害宿」となり、
+        損失・破壊・身の危険が集中しやすい大凶日です。
+        メールで事前にお知らせするので、その日だけは行動を最小化してください。
+      </p>
+    </div>
+
+    <p style="margin:0;color:#7A6A50;font-size:12px;line-height:1.7;text-align:center">
+      守護星：${birthShuku.element}曜 ─ あなたを守る星が照らし続けます
+    </p>
+  </td></tr>
+
+  <!-- 今日の鑑定へのリンク -->
+  <tr><td style="padding:0 24px 24px;text-align:center">
+    <a href="${BASE_URL}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#8B6914,#D4AF37,#8B6914);color:#03000A;font-size:13px;font-weight:bold;text-decoration:none;border-radius:8px;letter-spacing:0.15em">
+      今日の鑑定を見る
+    </a>
+  </td></tr>
+
+  <!-- フッター -->
+  <tr><td style="padding:16px 24px;border-top:1px solid rgba(212,175,55,0.1);text-align:center">
+    <p style="margin:0 0 6px;color:#3A2A1A;font-size:10px">このメールは毎朝6:30に自動配信されます</p>
+    <a href="${unsubscribeUrl}" style="color:#3A2A1A;font-size:10px;text-decoration:underline">配信停止はこちら</a>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `✦ 登録完了｜あなたの本命宿は${birthShuku.name}です【宿曜道】`,
+    html,
+  });
+}

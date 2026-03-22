@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -12,6 +13,7 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
+    "@marp-team/marpit": "^3.2.1",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@tailwindcss/postcss": "^4.2.2",
@@ -23,11 +25,14 @@
     "next": "^16.2.1",
     "pg": "^8.20.0",
     "postcss": "^8.5.8",
+    "pptxgenjs": "^4.0.1",
     "prisma": "^7.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "resend": "^6.9.4",
+    "stripe": "^20.4.1",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
   }
 }

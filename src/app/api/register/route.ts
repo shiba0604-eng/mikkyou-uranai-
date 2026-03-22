@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 import { assessDanger } from "../../../../lib/shukuyo";
-import { sendDailyFortune } from "../../../../lib/email";
+import { sendWelcomeEmail, sendDailyFortune } from "../../../../lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "日付が正しくありません" }, { status: 400 });
     }
 
+    const isNew = !(await prisma.user.findUnique({ where: { email } }));
+
     // upsert（既存ユーザーは更新）
     const user = await prisma.user.upsert({
       where: { email },
@@ -23,9 +25,16 @@ export async function POST(req: NextRequest) {
       create: { email, birthYear: y, birthMonth: m, birthDay: d },
     });
 
-    // 登録確認メールとして今日の鑑定を即送信
     const assessment = assessDanger(y, m, d);
-    await sendDailyFortune(email, user.id, assessment);
+
+    if (isNew) {
+      // 新規：ウェルカムメール + 今日の鑑定
+      await sendWelcomeEmail(email, user.id, assessment);
+      await sendDailyFortune(email, user.id, assessment);
+    } else {
+      // 再登録：今日の鑑定のみ
+      await sendDailyFortune(email, user.id, assessment);
+    }
 
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (err) {

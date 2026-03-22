@@ -15,6 +15,31 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   logs        FortuneLog[]
+  slideCredits SlideCreditAccount?
+}
+
+/// HighStakes-Slides: 書き出しクレジット（Stripe連携想定）
+model SlideCreditAccount {
+  id               String   @id @default(cuid())
+  userId           String?  @unique
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email            String   @unique
+  creditsBalance   Int      @default(0)
+  creditsLifetime  Int      @default(0)
+  stripeCustomerId String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  exportLogs       SlideExportLog[]
+}
+
+model SlideExportLog {
+  id         String   @id @default(cuid())
+  accountId  String
+  account    SlideCreditAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  slideCount Int
+  dnaId      String
+  consumed   Int      @default(1)
+  createdAt  DateTime @default(now())
 }
 
 /// 毎朝の配信ログ
