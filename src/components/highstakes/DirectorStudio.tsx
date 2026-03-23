@@ -1,6 +1,7 @@
 "use client";
 
 import type { DesignDnaId, OrchestratorResult, SlideDeckSlide } from "@lib/agents/types";
+import { HIGHSTAKES_NOTES_MAX } from "@/lib/highstakes/limits";
 import { DESIGN_DNAS, DNA_IDS } from "@styles/dna";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -15,6 +16,29 @@ function useDebounced<T>(value: T, ms: number): T {
 
 function cloneSlides(slides: SlideDeckSlide[]): SlideDeckSlide[] {
   return JSON.parse(JSON.stringify(slides)) as SlideDeckSlide[];
+}
+
+function formatGenerateApiError(
+  status: number,
+  data: { error?: unknown },
+): string {
+  const raw = data.error;
+  const s = typeof raw === "string" ? raw : "";
+  if (s.includes("too_big") && s.includes("notes")) {
+    return `メモが長すぎます（最大 ${HIGHSTAKES_NOTES_MAX.toLocaleString("ja-JP")} 文字まで）。要約するか分割してください。`;
+  }
+  if (s.trimStart().startsWith("[")) {
+    try {
+      const issues = JSON.parse(s) as { code?: string; path?: (string | number)[] }[];
+      const first = issues[0];
+      if (first?.code === "too_big" && first.path?.[0] === "notes") {
+        return `メモが長すぎます（最大 ${HIGHSTAKES_NOTES_MAX.toLocaleString("ja-JP")} 文字まで）。要約するか分割してください。`;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return s || `生成APIエラー (${status})`;
 }
 
 export default function DirectorStudio() {
@@ -64,11 +88,7 @@ export default function DirectorStudio() {
       const data = (await res.json()) as OrchestratorResult & { error?: string };
       if (id !== genSeq.current) return;
       if (!res.ok) {
-        const msg =
-          typeof data.error === "string"
-            ? data.error
-            : `生成APIエラー (${res.status})`;
-        throw new Error(msg);
+        throw new Error(formatGenerateApiError(res.status, data));
       }
       setResult(data);
       setSlides(cloneSlides(data.slides));
@@ -94,6 +114,14 @@ export default function DirectorStudio() {
       return;
     }
     if (debouncedNotes !== notes) return;
+
+    if (debouncedNotes.length > HIGHSTAKES_NOTES_MAX) {
+      genAbortRef.current?.abort();
+      setGenError(
+        `メモが長すぎます（最大 ${HIGHSTAKES_NOTES_MAX.toLocaleString("ja-JP")} 文字まで）。要約するか分割してください。`,
+      );
+      return;
+    }
 
     genAbortRef.current?.abort();
     const ac = new AbortController();
@@ -295,10 +323,23 @@ export default function DirectorStudio() {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="ここにメモを貼り付け。数秒後に自動生成、または下の「今すぐ生成」を押してください。"
         />
+        <div
+          className={`text-xs ${notes.length > HIGHSTAKES_NOTES_MAX ? "font-medium text-red-600" : "text-slate-500"}`}
+        >
+          {notes.length.toLocaleString("ja-JP")} /{" "}
+          {HIGHSTAKES_NOTES_MAX.toLocaleString("ja-JP")} 文字
+          {notes.length > HIGHSTAKES_NOTES_MAX && (
+            <span> — 上限超過のため生成できません。要約するか分割してください。</span>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={loadingGen || !notes.trim()}
+            disabled={
+              loadingGen ||
+              !notes.trim() ||
+              notes.length > HIGHSTAKES_NOTES_MAX
+            }
             onClick={() => {
               genAbortRef.current?.abort();
               const ac = new AbortController();
