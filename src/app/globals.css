@@ -157,3 +157,59 @@ main { position: relative; z-index: 1; }
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
+
+/* ── ガイドスピリット ── */
+@keyframes rotate-dharma {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes rotate-dharma-rev {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.4; }
+  33% { transform: translateY(-8px) translateX(4px); opacity: 0.8; }
+  66% { transform: translateY(-4px) translateX(-4px); opacity: 0.6; }
+}
+@keyframes quote-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  15%, 85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes halo-pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+@keyframes third-eye-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px #c084fc); }
+  50% { filter: drop-shadow(0 0 10px #c084fc) drop-shadow(0 0 20px #7c3aed); }
+}
+.animate-rotate-dharma { animation: rotate-dharma 40s linear infinite; transform-origin: center; }
+.animate-rotate-dharma-rev { animation: rotate-dharma-rev 30s linear infinite; transform-origin: center; }
+.animate-breathe { animation: breathe 4s ease-in-out infinite; }
+.animate-particle { animation: particle-float 6s ease-in-out infinite; }
+.animate-quote-fade { animation: quote-fade 5s ease-in-out; }
+.animate-halo-pulse { animation: halo-pulse 3s ease-in-out infinite; }
+.animate-third-eye { animation: third-eye-glow 2s ease-in-out infinite; }
+
+/* ── 装飾ボーダー ── */
+.border-gold-ornate {
+  border: 1px solid rgba(212,175,55,0.3);
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.08) inset, 0 0 20px rgba(212,175,55,0.05);
+}
+
+/* ── セクション装飾 ── */
+.section-lotus::before {
+  content: '✿';
+  display: block;
+  text-align: center;
+  color: rgba(212,175,55,0.25);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  letter-spacing: 0.5em;
+}

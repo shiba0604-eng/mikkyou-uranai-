@@ -2,7 +2,7 @@
 
 import type { DesignDnaId, OrchestratorResult, SlideDeckSlide } from "@lib/agents/types";
 import { DESIGN_DNAS, DNA_IDS } from "@styles/dna";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -18,17 +18,19 @@ function cloneSlides(slides: SlideDeckSlide[]): SlideDeckSlide[] {
 }
 
 export default function DirectorStudio() {
-  const [notes, setNotes] = useState(
-    "新製品ローンチ。ターゲットは中堅企業の情シス。競合Aとの差はセキュリティ監査の自動化。",
-  );
-  const debouncedNotes = useDebounced(notes, 700);
+  const [notes, setNotes] = useState("");
+  const debouncedNotes = useDebounced(notes, 350);
   const [result, setResult] = useState<OrchestratorResult | null>(null);
   const [slides, setSlides] = useState<SlideDeckSlide[]>([]);
   const [selectedDna, setSelectedDna] = useState<DesignDnaId>("executive_trust");
   const [hoverDna, setHoverDna] = useState<DesignDnaId | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [loadingGen, setLoadingGen] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const genSeq = useRef(0);
   const [email, setEmail] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -39,41 +41,74 @@ export default function DirectorStudio() {
 
   const effectiveDna = hoverDna ?? selectedDna;
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!debouncedNotes.trim()) return;
-      setLoadingGen(true);
-      try {
-        const res = await fetch("/api/highstakes/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notes: debouncedNotes }),
-        });
-        const data = (await res.json()) as OrchestratorResult & { error?: string };
-        if (cancelled) return;
-        if (!res.ok) throw new Error(data.error ?? "generate failed");
-        setResult(data);
-        setSlides(cloneSlides(data.slides));
-      } catch {
-        if (!cancelled) setResult(null);
-      } finally {
-        if (!cancelled) setLoadingGen(false);
+  const runGenerate = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setGenError("メモが空です。貼り付けたあと「今すぐ生成」を押すか、文字が入っているか確認してください。");
+      setResult(null);
+      setSlides([]);
+      return;
+    }
+    const id = ++genSeq.current;
+    setLoadingGen(true);
+    setGenError(null);
+    try {
+      const res = await fetch("/api/highstakes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: trimmed }),
+      });
+      const data = (await res.json()) as OrchestratorResult & { error?: string };
+      if (id !== genSeq.current) return;
+      if (!res.ok) {
+        const msg =
+          typeof data.error === "string"
+            ? data.error
+            : `生成APIエラー (${res.status})`;
+        throw new Error(msg);
       }
-    })();
+      setResult(data);
+      setSlides(cloneSlides(data.slides));
+    } catch (e) {
+      if (id !== genSeq.current) return;
+      setResult(null);
+      setSlides([]);
+      setGenError(e instanceof Error ? e.message : "生成に失敗しました");
+    } finally {
+      if (id === genSeq.current) setLoadingGen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!debouncedNotes.trim()) {
+      setResult(null);
+      setSlides([]);
+      setGenError(null);
+      return;
+    }
+    void runGenerate(debouncedNotes);
+  }, [debouncedNotes, runGenerate]);
+
+  useEffect(() => {
     return () => {
-      cancelled = true;
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
     };
-  }, [debouncedNotes]);
+  }, [previewObjectUrl]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!slides.length) {
         setPreviewHtml("");
+        setPreviewObjectUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
+        setPreviewError(null);
         return;
       }
       setLoadingPreview(true);
+      setPreviewError(null);
       try {
         const res = await fetch("/api/highstakes/preview", {
           method: "POST",
@@ -82,10 +117,31 @@ export default function DirectorStudio() {
         });
         const data = (await res.json()) as { html?: string; error?: string };
         if (cancelled) return;
-        if (!res.ok) throw new Error(data.error ?? "preview failed");
-        setPreviewHtml(data.html ?? "");
-      } catch {
-        if (!cancelled) setPreviewHtml("");
+        if (!res.ok) {
+          throw new Error(
+            typeof data.error === "string"
+              ? data.error
+              : `プレビューAPIエラー (${res.status})`,
+          );
+        }
+        const html = data.html ?? "";
+        setPreviewHtml(html);
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        setPreviewObjectUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return url;
+        });
+      } catch (e) {
+        if (cancelled) return;
+        setPreviewHtml("");
+        setPreviewObjectUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
+        setPreviewError(
+          e instanceof Error ? e.message : "プレビューの取得に失敗しました",
+        );
       } finally {
         if (!cancelled) setLoadingPreview(false);
       }
@@ -227,8 +283,26 @@ export default function DirectorStudio() {
           className="min-h-[200px] rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 shadow-inner outline-none focus:border-amber-600"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="箇条書きでも走り書きでもOK"
+          placeholder="ここにメモを貼り付け。数秒後に自動生成、または下の「今すぐ生成」を押してください。"
         />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={loadingGen || !notes.trim()}
+            onClick={() => void runGenerate(notes)}
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 hover:bg-amber-700"
+          >
+            今すぐ生成
+          </button>
+          <span className="self-center text-xs text-slate-500">
+            貼り付けだけでは未入力に見える場合は、一度クリックしてフォーカスを置いてから貼り付け直してください。
+          </span>
+        </div>
+        {genError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            {genError}
+          </div>
+        )}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="mb-2 text-xs font-semibold text-slate-700">
             進捗ステータス
@@ -244,7 +318,11 @@ export default function DirectorStudio() {
               </li>
             ))}
             {!statusLines.length && (
-              <li className="text-slate-400">メモ入力待ち</li>
+              <li className="text-slate-400">
+                {notes.trim()
+                  ? "生成待ち（自動は入力止めてから約0.35秒後）"
+                  : "メモを入力するか貼り付けてください"}
+              </li>
             )}
           </ul>
           {result && (
@@ -350,10 +428,20 @@ export default function DirectorStudio() {
           <span>Marp プレビュー（{DESIGN_DNAS[effectiveDna].name}）</span>
           {loadingPreview && <span className="text-amber-700">描画中…</span>}
         </div>
+        {previewError && (
+          <div className="mx-2 mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+            プレビュー: {previewError}
+          </div>
+        )}
         <iframe
           title="marp-preview"
           className="h-[min(72vh,800px)] w-full flex-1 rounded-lg border border-slate-200 bg-white"
-          srcDoc={previewHtml || "<p style='padding:1rem;color:#64748b'>プレビュー待ち</p>"}
+          src={previewObjectUrl ?? undefined}
+          srcDoc={
+            previewObjectUrl
+              ? undefined
+              : "<!DOCTYPE html><html><body style='margin:0;padding:1rem;font:14px system-ui;color:#64748b'>左でメモを入力し「今すぐ生成」または自動生成を待つと、ここにスライドが表示されます。</body></html>"
+          }
         />
 
         {popover && (
