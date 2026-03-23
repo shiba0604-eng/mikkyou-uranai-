@@ -24,13 +24,13 @@ export default function DirectorStudio() {
   const [slides, setSlides] = useState<SlideDeckSlide[]>([]);
   const [selectedDna, setSelectedDna] = useState<DesignDnaId>("executive_trust");
   const [hoverDna, setHoverDna] = useState<DesignDnaId | null>(null);
-  const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [loadingGen, setLoadingGen] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const genSeq = useRef(0);
+  const genAbortRef = useRef<AbortController | null>(null);
   const [email, setEmail] = useState("");
   const [credits, setCredits] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -41,10 +41,12 @@ export default function DirectorStudio() {
 
   const effectiveDna = hoverDna ?? selectedDna;
 
-  const runGenerate = useCallback(async (text: string) => {
+  const runGenerate = useCallback(async (text: string, signal?: AbortSignal) => {
     const trimmed = text.trim();
     if (!trimmed) {
-      setGenError("メモが空です。貼り付けたあと「今すぐ生成」を押すか、文字が入っているか確認してください。");
+      setGenError(
+        "メモが空です。貼り付けたあと「今すぐ生成」を押すか、文字が入っているか確認してください。",
+      );
       setResult(null);
       setSlides([]);
       return;
@@ -57,6 +59,7 @@ export default function DirectorStudio() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes: trimmed }),
+        signal,
       });
       const data = (await res.json()) as OrchestratorResult & { error?: string };
       if (id !== genSeq.current) return;
@@ -71,6 +74,7 @@ export default function DirectorStudio() {
       setSlides(cloneSlides(data.slides));
     } catch (e) {
       if (id !== genSeq.current) return;
+      if (e instanceof DOMException && e.name === "AbortError") return;
       setResult(null);
       setSlides([]);
       setGenError(e instanceof Error ? e.message : "生成に失敗しました");
@@ -81,13 +85,22 @@ export default function DirectorStudio() {
 
   useEffect(() => {
     if (!debouncedNotes.trim()) {
-      setResult(null);
-      setSlides([]);
-      setGenError(null);
+      if (!notes.trim()) {
+        genAbortRef.current?.abort();
+        setResult(null);
+        setSlides([]);
+        setGenError(null);
+      }
       return;
     }
-    void runGenerate(debouncedNotes);
-  }, [debouncedNotes, runGenerate]);
+    if (debouncedNotes !== notes) return;
+
+    genAbortRef.current?.abort();
+    const ac = new AbortController();
+    genAbortRef.current = ac;
+    void runGenerate(debouncedNotes, ac.signal);
+    return () => ac.abort();
+  }, [debouncedNotes, notes, runGenerate]);
 
   useEffect(() => {
     return () => {
@@ -99,7 +112,6 @@ export default function DirectorStudio() {
     let cancelled = false;
     (async () => {
       if (!slides.length) {
-        setPreviewHtml("");
         setPreviewObjectUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev);
           return null;
@@ -125,7 +137,6 @@ export default function DirectorStudio() {
           );
         }
         const html = data.html ?? "";
-        setPreviewHtml(html);
         const blob = new Blob([html], { type: "text/html;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         setPreviewObjectUrl((prev) => {
@@ -134,7 +145,6 @@ export default function DirectorStudio() {
         });
       } catch (e) {
         if (cancelled) return;
-        setPreviewHtml("");
         setPreviewObjectUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev);
           return null;
@@ -289,7 +299,12 @@ export default function DirectorStudio() {
           <button
             type="button"
             disabled={loadingGen || !notes.trim()}
-            onClick={() => void runGenerate(notes)}
+            onClick={() => {
+              genAbortRef.current?.abort();
+              const ac = new AbortController();
+              genAbortRef.current = ac;
+              void runGenerate(notes, ac.signal);
+            }}
             className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 hover:bg-amber-700"
           >
             今すぐ生成
